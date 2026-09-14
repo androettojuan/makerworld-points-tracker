@@ -1,0 +1,20 @@
+:root { --bg:#fff; --fg:#16181d; --muted:#6b7280; --line:#e6e8ec; --accent:#2f7df6; --danger:#d94040; }
+@media (prefers-color-scheme: dark) { :root { --bg:#16181d; --fg:#f2f3f5; --muted:#9aa3af; --line:#2a2e37; } }
+body { max-width: 900px; margin: 0 auto; padding: 24px 16px; background: var(--bg); color: var(--fg);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+h2 { font-size: 14px; margin: 0 0 8px; }
+section { margin-top: 28px; }
+.hint { color: var(--muted); margin: 0; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+pre { background: rgba(127,127,127,.08); border: 1px solid var(--line); border-radius: 6px;
+  padding: 10px; max-height: 340px; overflow: auto; font-size: 12px; }
+.actions { display: flex; gap: 8px; }
+button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line);
+  background: transparent; color: var(--fg); cursor: pointer; }
+button:hover { border-color: var(--accent); color: var(--accent); }
+button.danger:hover { border-color: var(--danger); color: var(--danger); }
+small { color: var(--muted); font-weight: 400; }

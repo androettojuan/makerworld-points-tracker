@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>MakerWorld Points — Diagnóstico</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <h1>Diagnóstico</h1>
+  <p class="hint">
+    Esta página muestra qué aprendió la extensión del tráfico real de MakerWorld.
+    Si la clasificación boost/diseño falla, mirá la columna <em>Etiqueta</em> de los
+    registros crudos: esos son los textos con los que decide.
+  </p>
+
+  <section>
+    <h2>Endpoints detectados</h2>
+    <table id="endpoints"><thead><tr><th>Endpoint</th><th>Registros</th><th>Hits</th><th>Último</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Clasificación</h2>
+    <table id="kinds"><thead><tr><th>Etiqueta</th><th>Clasificada como</th><th>Registros</th><th>Puntos</th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2>Registros crudos <small id="count"></small></h2>
+    <pre id="raw"></pre>
+  </section>
+
+  <section class="actions">
+    <button id="export" type="button">Exportar JSON</button>
+    <button id="csv" type="button">Exportar CSV</button>
+    <button id="reset" type="button" class="danger">Borrar todos los datos</button>
+  </section>
+
+  <script type="module" src="options.js"></script>
+</body>
+</html>

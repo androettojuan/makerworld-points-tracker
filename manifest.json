@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "MakerWorld Points Tracker",
+  "version": "0.1.0",
+  "description": "Lleva el control diario de los puntos que ganás en MakerWorld y separa cuánto viene de boosts y cuánto de tus diseños.",
+  "permissions": ["storage", "unlimitedStorage", "alarms"],
+  "host_permissions": [
+    "https://makerworld.com/*",
+    "https://*.makerworld.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://makerworld.com/*", "https://*.makerworld.com/*"],
+      "js": ["src/sniffer.js"],
+      "run_at": "document_start",
+      "world": "MAIN",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://makerworld.com/*", "https://*.makerworld.com/*"],
+      "js": ["src/bridge.js"],
+      "run_at": "document_start",
+      "world": "ISOLATED",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_title": "MakerWorld Points Tracker"
+  },
+  "options_page": "src/options/options.html",
+  "icons": {
+    "128": "icons/icon128.png"
+  }
+}

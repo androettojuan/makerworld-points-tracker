@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="popup.css" />
+  <title>MakerWorld Points</title>
+</head>
+<body>
+  <header>
+    <h1>Puntos MakerWorld</h1>
+    <button id="sync" type="button">Sincronizar</button>
+  </header>
+
+  <section class="cards">
+    <div class="card"><span class="label">Hoy</span><strong id="today">–</strong></div>
+    <div class="card"><span class="label">7 días</span><strong id="week">–</strong></div>
+    <div class="card"><span class="label">30 días</span><strong id="month">–</strong></div>
+    <div class="card"><span class="label">Total</span><strong id="all">–</strong></div>
+  </section>
+
+  <section class="split">
+    <div class="bar" id="split-bar"></div>
+    <ul class="legend">
+      <li><i class="sw design"></i> Diseños <b id="l-design">0</b></li>
+      <li><i class="sw boost"></i> Boosts <b id="l-boost">0</b></li>
+      <li><i class="sw other"></i> Otros <b id="l-other">0</b></li>
+    </ul>
+  </section>
+
+  <section class="chart">
+    <div class="chart-head">
+      <span>Últimos <select id="range"><option value="14">14</option><option value="30" selected>30</option><option value="90">90</option></select> días</span>
+    </div>
+    <div id="chart"></div>
+  </section>
+
+  <section class="recent">
+    <h2>Detalle diario</h2>
+    <table id="table"><tbody></tbody></table>
+  </section>
+
+  <footer>
+    <span id="status">–</span>
+    <a href="#" id="opts">Diagnóstico</a>
+  </footer>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
