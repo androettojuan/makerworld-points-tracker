@@ -15,12 +15,23 @@
     window.postMessage({ __mwpt: true, type, payload }, window.location.origin);
   };
 
+  const toUrl = (input) => {
+    if (typeof input === 'string') return input;
+    if (input instanceof URL) return input.href;
+    return input && input.url;
+  };
+
+  /**
+   * Miramos todo el JSON propio de MakerWorld (/api/* y /_next/data/*), no solo
+   * las URLs que mencionan puntos: el nombre real del endpoint no lo conocemos
+   * y el parser ya descarta lo que no tenga forma de registro.
+   */
   const isInteresting = (url) => {
     try {
       const u = new URL(url, location.href);
-      if (!/makerworld\.com$/.test(u.hostname)) return false;
-      if (!u.pathname.startsWith('/api/')) return false;
-      return POINT_URL_RE.test(u.pathname) || POINT_URL_RE.test(u.search);
+      if (!/(^|\.)makerworld\.com$/.test(u.hostname)) return false;
+      if (u.pathname === '/api/csrf') return false;
+      return u.pathname.startsWith('/api/') || u.pathname.startsWith('/_next/data/');
     } catch {
       return false;
     }
@@ -51,7 +62,8 @@
       return; // no es JSON, no nos sirve
     }
     if (!json || typeof json !== 'object') return;
-    post('capture', { url, method, headers, body: json, at: Date.now() });
+    const abs = new URL(url, location.href).href;
+    post('capture', { url: abs, method, headers, body: json, at: Date.now(), pageUrl: location.href, pointy: POINT_URL_RE.test(abs) || POINT_URL_RE.test(location.pathname) });
   };
 
   // --- fetch ---------------------------------------------------------------
@@ -59,7 +71,7 @@
   window.fetch = async function (input, init = {}) {
     const res = await nativeFetch.apply(this, arguments);
     try {
-      const url = typeof input === 'string' ? input : input.url;
+      const url = toUrl(input);
       if (isInteresting(url)) {
         const method = (init.method || (input && input.method) || 'GET').toUpperCase();
         const headers = pickHeaders(init.headers || (input && input.headers));
@@ -109,12 +121,36 @@
       });
       const text = await res.text();
       let body = null;
-      try { body = JSON.parse(text); } catch {}
+      try { body = JSON.parse(text); } catch {
+        // Página HTML: nos quedamos con los props de __NEXT_DATA__.
+        const m = text.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
+        if (m) try { body = JSON.parse(m[1]).props; } catch {}
+      }
       post('replay-result', { id, ok: res.ok, status: res.status, body });
     } catch (err) {
       post('replay-result', { id, ok: false, status: 0, error: String(err) });
     }
   });
+
+  // --- SSR: la primera carga de una página Next.js no hace fetch, trae los
+  // datos en __NEXT_DATA__. Lo reportamos con la URL /_next/data equivalente,
+  // que devuelve el mismo JSON y sí se puede re-emitir para paginar.
+  const reportNextData = () => {
+    const el = document.getElementById('__NEXT_DATA__');
+    if (!el) return;
+    try {
+      const data = JSON.parse(el.textContent);
+      if (!data.buildId || !data.props) return;
+      const path = location.pathname.replace(/\/$/, '') || '/index';
+      const url = `${location.origin}/_next/data/${data.buildId}${path}.json${location.search}`;
+      post('capture', { url, method: 'GET', headers: {}, body: data.props, at: Date.now(), pageUrl: location.href, pointy: POINT_URL_RE.test(location.href) });
+    } catch {}
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', reportNextData, { once: true });
+  } else {
+    reportNextData();
+  }
 
   post('ready', { url: location.href });
   void CHANNEL;

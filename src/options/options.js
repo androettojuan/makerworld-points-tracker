@@ -4,6 +4,7 @@ let state = { records: {}, endpoints: {}, meta: {} };
 async function load() {
   state = await chrome.runtime.sendMessage({ type: 'get-state' });
   renderEndpoints();
+  renderCheck();
   renderKinds();
   renderRaw();
 }
@@ -12,7 +13,7 @@ function renderEndpoints() {
   const rows = Object.values(state.endpoints || {}).sort((a, b) => b.yields - a.yields);
   $('#endpoints').querySelector('tbody').innerHTML = rows.length
     ? rows.map((e) => `<tr>
-        <td><code>${e.key}</code></td>
+        <td><code>${escapeHtml(e.key)}</code>${e.sample ? `<details><summary>Ver respuesta</summary><pre>${escapeHtml(e.sample)}</pre></details>` : ''}</td>
         <td class="num">${e.yields}</td>
         <td class="num">${e.hits}</td>
         <td>${new Date(e.lastSeen).toLocaleString('es-AR')}</td>
@@ -20,25 +21,51 @@ function renderEndpoints() {
     : '<tr><td colspan="4">Nada capturado todavía. Navegá tu historial de puntos en MakerWorld.</td></tr>';
 }
 
-/** Agrupa por etiqueta para ver de un vistazo si la heurística acierta. */
+const num = (n) => (Math.round(n * 100) / 100).toLocaleString('es-AR');
+
+/** Exclusivos y regulares de un registro (el historial los trae separados). */
+const pointsOf = (r) => ('pointChangeExclusive' in (r.raw || {}) || 'pointChangeRegular' in (r.raw || {}))
+  ? { excl: Number(r.raw.pointChangeExclusive) || 0, reg: Number(r.raw.pointChangeRegular) || 0 }
+  : { excl: r.amount, reg: 0 };
+
+function renderCheck() {
+  let excl = 0, reg = 0;
+  for (const r of Object.values(state.records)) {
+    const p = pointsOf(r);
+    excl += p.excl;
+    reg += p.reg;
+  }
+  const snap = state.meta?.snapshot;
+  const diff = (a, b) => (b == null ? '–' : Math.abs(a - b) < 0.01 ? '✔ coincide' : num(a - b));
+  $('#check').querySelector('tbody').innerHTML = `
+    <tr><td>Suma del historial</td><td class="num">${num(excl)}</td><td class="num">${num(reg)}</td></tr>
+    <tr><td>Saldo en MakerWorld</td><td class="num">${snap?.exclusive != null ? num(snap.exclusive) : '– (sincronizá)'}</td><td class="num">${snap?.regular != null ? num(snap.regular) : '–'}</td></tr>
+    <tr><td>Diferencia</td><td class="num">${diff(excl, snap?.exclusive)}</td><td class="num">${diff(reg, snap?.regular)}</td></tr>`;
+}
+
+/** Agrupa por tipo de movimiento para ver de un vistazo si la clasificación acierta. */
 function renderKinds() {
   const groups = new Map();
   for (const r of Object.values(state.records)) {
-    const key = `${r.label}||${r.kind}`;
-    if (!groups.has(key)) groups.set(key, { label: r.label, kind: r.kind, count: 0, sum: 0 });
+    const type = r.raw?.type || r.label;
+    const key = `${type}||${r.kind}`;
+    if (!groups.has(key)) groups.set(key, { type, kind: r.kind, count: 0, excl: 0, reg: 0 });
     const g = groups.get(key);
+    const p = pointsOf(r);
     g.count++;
-    g.sum += r.amount;
+    g.excl += p.excl;
+    g.reg += p.reg;
   }
-  const rows = [...groups.values()].sort((a, b) => b.sum - a.sum);
+  const rows = [...groups.values()].sort((a, b) => b.excl - a.excl);
   $('#kinds').querySelector('tbody').innerHTML = rows.length
     ? rows.map((g) => `<tr>
-        <td>${escapeHtml(g.label)}</td>
+        <td>${escapeHtml(g.type)}</td>
         <td>${g.kind}</td>
         <td class="num">${g.count}</td>
-        <td class="num">${g.sum}</td>
+        <td class="num">${num(g.excl)}</td>
+        <td class="num">${num(g.reg)}</td>
       </tr>`).join('')
-    : '<tr><td colspan="4">Sin registros</td></tr>';
+    : '<tr><td colspan="5">Sin registros</td></tr>';
 }
 
 function renderRaw() {

@@ -18,3 +18,5 @@ button { font: inherit; padding: 6px 12px; border-radius: 6px; border: 1px solid
 button:hover { border-color: var(--accent); color: var(--accent); }
 button.danger:hover { border-color: var(--danger); color: var(--danger); }
 small { color: var(--muted); font-weight: 400; }
+
+td details pre { max-height: 24rem; overflow: auto; white-space: pre; max-width: 60vw; margin-top: 6px; }

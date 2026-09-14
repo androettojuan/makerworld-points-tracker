@@ -6,7 +6,7 @@
  * registros de puntos: algo con una cantidad y una fecha.
  */
 
-const AMOUNT_KEYS = ['point', 'points', 'amount', 'credit', 'credits', 'value', 'num', 'quantity', 'score'];
+const AMOUNT_KEYS = ['point', 'points', 'pointamount', 'pointnum', 'pointvalue', 'changepoint', 'pointchange', 'changeamount', 'amount', 'credit', 'credits', 'value', 'num', 'quantity', 'score'];
 const TIME_KEYS = ['createtime', 'createdat', 'created_at', 'createat', 'time', 'date', 'datetime', 'timestamp', 'ts', 'day', 'updatetime'];
 const ID_KEYS = ['id', 'recordid', 'record_id', 'uid', 'bizid', 'orderid', 'serialno', 'no'];
 const TEXT_KEYS = ['type', 'subtype', 'category', 'source', 'title', 'name', 'desc', 'description', 'remark', 'reason', 'action', 'event', 'bizType', 'pointtype', 'scene'];
@@ -44,24 +44,31 @@ export function toEpochMs(v) {
   return null;
 }
 
-const looksLikeRecord = (o) =>
+/**
+ * En URLs que no hablan de puntos solo aceptamos campos de cantidad que digan
+ * "point"/"credit" explícitamente; si no, cualquier lista con `score` o `value`
+ * y fecha (modelos, comentarios…) se colaría como registro.
+ */
+const STRICT_AMOUNT_KEYS = AMOUNT_KEYS.filter((k) => /point|credit/.test(k));
+
+const looksLikeRecord = (o, amountKeys = AMOUNT_KEYS) =>
   o && typeof o === 'object' && !Array.isArray(o) &&
-  findKey(o, AMOUNT_KEYS) !== null &&
+  findKey(o, amountKeys) !== null &&
   findKey(o, TIME_KEYS) !== null;
 
 /** Recorre el JSON y devuelve todos los arrays de objetos con pinta de registros. */
-function collectCandidateArrays(node, path = '$', out = []) {
+function collectCandidateArrays(node, amountKeys, path = '$', out = []) {
   if (Array.isArray(node)) {
     const objs = node.filter((x) => x && typeof x === 'object' && !Array.isArray(x));
-    if (objs.length && objs.filter(looksLikeRecord).length >= Math.ceil(objs.length / 2)) {
+    if (objs.length && objs.filter((o) => looksLikeRecord(o, amountKeys)).length >= Math.ceil(objs.length / 2)) {
       out.push({ path, items: objs });
       return out; // no bajamos más: este array ya es la lista
     }
-    node.forEach((child, i) => collectCandidateArrays(child, `${path}[${i}]`, out));
+    node.forEach((child, i) => collectCandidateArrays(child, amountKeys, `${path}[${i}]`, out));
     return out;
   }
   if (node && typeof node === 'object') {
-    for (const [k, v] of Object.entries(node)) collectCandidateArrays(v, `${path}.${k}`, out);
+    for (const [k, v] of Object.entries(node)) collectCandidateArrays(v, amountKeys, `${path}.${k}`, out);
   }
   return out;
 }
@@ -87,14 +94,17 @@ export function classify(text) {
   return 'other';
 }
 
+export const POINT_URL_RE = /point|credit|reward|income|earning/i;
+
 /** Extrae y normaliza registros desde una respuesta cruda de la API. */
-export function extractRecords(body, sourceUrl = '') {
-  const arrays = collectCandidateArrays(body);
+export function extractRecords(body, sourceUrl = '', { pointy = POINT_URL_RE.test(sourceUrl) } = {}) {
+  const amountKeys = pointy ? AMOUNT_KEYS : STRICT_AMOUNT_KEYS;
+  const arrays = collectCandidateArrays(body, amountKeys);
   const records = [];
 
   for (const { path, items } of arrays) {
     for (const item of items) {
-      const amountKey = findKey(item, AMOUNT_KEYS);
+      const amountKey = findKey(item, amountKeys);
       const timeKey = findKey(item, TIME_KEYS);
       if (!amountKey || !timeKey) continue;
 

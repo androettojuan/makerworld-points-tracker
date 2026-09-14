@@ -19,6 +19,17 @@ export async function saveRecords(list) {
   return added;
 }
 
+/** Borra los registros que cumplan `pred`. Devuelve cuántos borró. */
+export async function removeRecords(pred) {
+  const records = await getRecords();
+  let removed = 0;
+  for (const [id, rec] of Object.entries(records)) {
+    if (pred(rec)) { delete records[id]; removed++; }
+  }
+  if (removed) await chrome.storage.local.set({ [KEYS.records]: records });
+  return removed;
+}
+
 export async function getEndpoints() {
   const { [KEYS.endpoints]: e } = await chrome.storage.local.get(KEYS.endpoints);
   return e || {};
@@ -33,8 +44,12 @@ export async function saveEndpoint(profile) {
   const u = new URL(profile.url);
   const key = `${profile.method} ${u.pathname}`;
   const prev = endpoints[key];
+  // Una página vacía (fin del histórico) no debe borrar lo aprendido: si antes
+  // este endpoint dio registros, conservamos esa URL y sus headers para el sync.
+  const keepPrev = prev && prev.yields > 0 && !(profile.yields > 0);
   endpoints[key] = {
-    ...profile,
+    ...(keepPrev ? prev : profile),
+    yields: Math.max(prev?.yields || 0, profile.yields || 0),
     key,
     firstSeen: prev?.firstSeen || profile.at,
     lastSeen: profile.at,
