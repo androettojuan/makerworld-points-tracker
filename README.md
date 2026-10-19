@@ -4,6 +4,15 @@ Extensión de Chrome (Manifest V3) que lleva el control de los puntos que ganás
 MakerWorld, con foco en los **puntos exclusivos** y su valor en dólares, separando
 cuánto viene de **diseños** y cuánto de **boosts**.
 
+<p align="center">
+  <img src="docs/capturas/popup-claro.png" width="400" alt="Popup con tema claro: tarjetas de hoy, este mes, mes pasado y saldo, gráfico diario apilado y tabla por mes">
+  &nbsp;
+  <img src="docs/capturas/popup-oscuro.png" width="400" alt="El mismo popup con tema oscuro">
+</p>
+
+<sub>Capturas con un historial de ejemplo inventado. El popup sigue el tema claro u
+oscuro del sistema.</sub>
+
 ## Qué muestra
 
 - **Hoy, este mes, mes pasado y saldo** en puntos exclusivos, con su valor en
@@ -54,6 +63,8 @@ Se sincroniza sola cada 3 horas mientras haya una pestaña de MakerWorld abierta
 Popup → *Diagnóstico*: verificación de la suma del historial contra el saldo real,
 clasificación por tipo de movimiento, endpoints vistos y exportación a JSON o CSV.
 
+![Página de diagnóstico: endpoints detectados, verificación de saldo que coincide y clasificación por tipo](docs/capturas/diagnostico.png)
+
 ## Datos
 
 Todo queda local en `chrome.storage.local`. No sale nada hacia ningún servidor.
@@ -63,3 +74,18 @@ Todo queda local en `chrome.storage.local`. No sale nada hacia ningún servidor.
 ```
 npm test
 ```
+
+## Capturas
+
+Las imágenes de este README salen de `scripts/capturas.mjs`, que abre el popup y la
+página de diagnóstico en Chromium con un `chrome` simulado y un historial de ejemplo
+(nunca datos de una cuenta real):
+
+```
+npm install
+npx playwright install chromium
+npm run capturas
+```
+
+Escribe `docs/capturas/*.png`. Cualquier cambio visible en el popup o el diagnóstico
+debería venir con las capturas regeneradas.
