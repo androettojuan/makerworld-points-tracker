@@ -16,7 +16,7 @@ function renderEndpoints() {
         <td><code>${escapeHtml(e.key)}</code>${e.sample ? `<details><summary>Ver respuesta</summary><pre>${escapeHtml(e.sample)}</pre></details>` : ''}</td>
         <td class="num">${e.yields}</td>
         <td class="num">${e.hits}</td>
-        <td>${new Date(e.lastSeen).toLocaleString('es-AR')}</td>
+        <td>${new Date(e.lastSeen).toLocaleString('es-AR', { hourCycle: 'h23' })}</td>
       </tr>`).join('')
     : '<tr><td colspan="4">Nada capturado todavía. Navegá tu historial de puntos en MakerWorld.</td></tr>';
 }
