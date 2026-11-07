@@ -35,6 +35,23 @@
     </ul>
   </section>
 
+  <section class="block">
+    <div class="block-head">
+      <h2>Por modelo</h2>
+      <select id="model-range" aria-label="Período por modelo">
+        <option value="month">Este mes</option>
+        <option value="prev">Mes pasado</option>
+        <option value="30" selected>30 días</option>
+        <option value="90">90 días</option>
+        <option value="all">Todo</option>
+      </select>
+    </div>
+    <table id="models">
+      <thead><tr><th>Modelo</th><th class="num">Diseño</th><th class="num">Boosts</th><th class="num">Exclusivos</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <button id="models-more" type="button" class="more" hidden></button>
+  </section>
 
   <section class="block">
     <h2>Por mes</h2>

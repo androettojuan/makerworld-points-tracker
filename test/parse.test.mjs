@@ -1,8 +1,8 @@
 import { extractRecords, detectPagination, classify, toEpochMs } from '../src/lib/parse.js';
-import { byDay, totals } from '../src/lib/aggregate.js';
+import { byDay, totals, byModel } from '../src/lib/aggregate.js';
 import { isMakerWorldUrl } from '../src/lib/makerworld.js';
 import { extractSnapshot, diffSnapshots } from '../src/lib/snapshot.js';
-import { parseBills, looksLikeBills, billKind } from '../src/lib/bills.js';
+import { parseBills, looksLikeBills, billKind, billDesign } from '../src/lib/bills.js';
 
 let fail = 0;
 const eq = (name, got, want) => {
@@ -94,6 +94,31 @@ const bd = totals(byDay(Object.fromEntries(pb.map(r => [r.id, r]))));
 eq('excl ganados', bd.total, 14.5);
 eq('excl por tipo', [bd.boost, bd.design], [12, 2.5]);
 eq('regulares aparte', [bd.regular, bd.regularSpent, bd.spent], [5, 490, 0]);
+
+// Por modelo
+const mb = parseBills({ hits: [
+  ...bills.hits,
+  { id: 10, type: 'design_reward_v2', createTime: '2026-09-13T10:00:00Z', pointChangeRegular: 1, pointChangeExclusive: 3, designRewardV2: { title: 'Llavero' } },
+  { id: 11, type: 'instance_reward_v2', createTime: '2026-09-13T11:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 1.5, instanceRewardV2: { instanceTitle: '0,2 mm', designTitle: ' Llavero ' } },
+  { id: 12, type: 'design_reward_v2', createTime: '2026-08-01T10:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 4, designRewardV2: { title: 'Capibaras' } },
+]});
+const mrec = Object.fromEntries(mb.map(r => [r.id, r]));
+eq('modelo boost', billDesign(bills.hits[0]), { key: 't:llavero', keys: ['t:llavero'], title: 'Llavero' });
+eq('modelo con id', billDesign({ type: 'design_reward_v2', designRewardV2: { title: 'X', designId: 55 } }).key, 'id:55');
+eq('modelo canje', billDesign(bills.hits[2]), null);
+eq('modelo con modelId', billDesign({ type: 'boost_exchange_point', extInfoBoostExchangePoint: { designTitle: 'X', modelId: 'USab12' } }).key, 'm:USab12');
+eq('por modelo', byModel(mrec).map(m => [m.title, m.total, m.design, m.boost, m.boosts]), [['Llavero', 16.5, 4.5, 12, 1], ['Capibaras', 6.5, 6.5, 0, 0]]);
+// Una publicación con dos perfiles: el perfil no separa, y el id une al título.
+const perfiles = Object.fromEntries(parseBills({ hits: [
+  { id: 20, type: 'instance_reward_v2', createTime: '2026-09-13T10:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 2, instanceRewardV2: { instanceId: 1, instanceTitle: '0,2 mm', designId: 77, designTitle: 'GTA VI' } },
+  { id: 21, type: 'instance_reward_v2', createTime: '2026-09-13T11:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 3, instanceRewardV2: { instanceId: 2, instanceTitle: 'Plano', designId: 77, designTitle: 'GTA VI' } },
+  { id: 22, type: 'design_reward_v2', createTime: '2026-09-13T12:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 4, designRewardV2: { title: 'GTA VI', designId: 77 } },
+  { id: 23, type: 'boost_exchange_point', createTime: '2026-09-13T13:00:00Z', pointChangeRegular: 0, pointChangeExclusive: 5, extInfoBoostExchangePoint: { designTitle: 'GTA VI' } },
+]}).map(r => [r.id, r]));
+eq('perfiles juntos', byModel(perfiles).map(m => [m.key, m.title, m.total, m.design, m.boost]), [['id:77', 'GTA VI', 14, 9, 5]]);
+eq('perfiles claves', byModel(perfiles)[0].keys.sort(), ['id:77', 't:gta vi']);
+eq('perfil sin designTitle', billDesign({ type: 'instance_reward_v2', instanceRewardV2: { instanceTitle: '0,2 mm' } }), null);
+eq('por modelo rango', byModel(mrec, { from: '2026-09-01', to: '2026-09-30' }).map(m => [m.title, m.total]), [['Llavero', 16.5], ['Capibaras', 2.5]]);
 
 console.log(fail ? `\n${fail} fallos` : '\nTodo verde');
 process.exit(fail ? 1 : 0);

@@ -1,4 +1,5 @@
 import { dayKey } from './parse.js';
+import { billDesign } from './bills.js';
 
 const round = (n) => Math.round(n * 100) / 100;
 const FIELDS = ['total', 'boost', 'design', 'other', 'spent', 'regular', 'regularSpent'];
@@ -89,4 +90,68 @@ export function byMonth(series) {
   return [...months.entries()]
     .map(([month, days]) => ({ month, ...totals(days) }))
     .sort((a, b) => b.month.localeCompare(a.month));
+}
+
+/**
+ * Exclusivos ganados por modelo entre `from` y `to` (YYYY-MM-DD, incluidos;
+ * sin límites = todo el historial), del que más dio al que menos.
+ * Junta recompensas de diseño, de todos los perfiles de impresión (`design`) y
+ * boosts (`boost`) de una misma publicación: dos movimientos van juntos si
+ * comparten id o título (ver `billDesign`). Las equivalencias se aprenden de todo
+ * el historial, no solo del período. Si una publicación cambió de título y
+ * MakerWorld no manda su id, queda partida en dos.
+ * Cada resultado trae en `keys` todas las claves que la identifican.
+ */
+export function byModel(records, { from = '', to = '9999-99-99' } = {}) {
+  const all = Object.values(records).map((rec) => [rec, billDesign(rec.raw)]).filter(([, m]) => m);
+
+  // Unión de claves: cada movimiento une todas las suyas en un mismo grupo.
+  const parent = new Map();
+  const root = (k) => {
+    if (!parent.has(k)) parent.set(k, k);
+    let r = k;
+    while (parent.get(r) !== r) r = parent.get(r);
+    parent.set(k, r);
+    return r;
+  };
+  for (const [, m] of all) {
+    const first = root(m.keys[0]);
+    for (const k of m.keys.slice(1)) {
+      const r = root(k);
+      if (r !== root(first)) parent.set(r, root(first));
+    }
+  }
+  const groupKeys = new Map();
+  for (const k of [...parent.keys()]) {
+    const r = root(k);
+    if (!groupKeys.has(r)) groupKeys.set(r, []);
+    groupKeys.get(r).push(k);
+  }
+
+  const models = new Map();
+  for (const [rec, model] of all) {
+    const d = rec.day || dayKey(rec.ts);
+    if (d < from || d > to) continue;
+    const { exclusive, regular } = pointsOf(rec);
+    const r = root(model.keys[0]);
+    if (!models.has(r)) {
+      const keys = groupKeys.get(r);
+      // Clave estable: preferimos el id de la publicación.
+      const key = keys.find((k) => k.startsWith('id:')) || keys.find((k) => k.startsWith('m:')) || keys[0];
+      models.set(r, { key, keys, title: model.title, total: 0, design: 0, boost: 0, regular: 0, boosts: 0, last: 0 });
+    }
+    const m = models.get(r);
+    if (exclusive > 0) {
+      m.total += exclusive;
+      if (rec.kind === 'boost') m.boost += exclusive;
+      else m.design += exclusive;
+    }
+    if (regular > 0) m.regular += regular;
+    if (rec.kind === 'boost') m.boosts++;
+    if (rec.ts > m.last) { m.last = rec.ts; m.title = model.title; }
+  }
+  return [...models.values()]
+    .map((m) => ({ ...m, total: round(m.total), design: round(m.design), boost: round(m.boost), regular: round(m.regular) }))
+    .filter((m) => m.total > 0 || m.regular > 0)
+    .sort((a, b) => b.total - a.total || b.regular - a.regular || a.title.localeCompare(b.title));
 }

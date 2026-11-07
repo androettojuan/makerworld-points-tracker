@@ -1,4 +1,4 @@
-import { byDay, byMonth, fillGaps, sumRange } from '../lib/aggregate.js';
+import { byDay, byModel, byMonth, fillGaps, sumRange } from '../lib/aggregate.js';
 import { dayKey } from '../lib/parse.js';
 
 const $ = (sel) => document.querySelector(sel);
@@ -13,11 +13,17 @@ const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', '
 const monthName = (ym) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 const shortDay = (day) => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
 let series = [];
+let records = {};
+let showAllModels = false;
+const MODELS_SHOWN = 10;
 
 async function load() {
   const state = await chrome.runtime.sendMessage({ type: 'get-state' });
-  series = byDay(state.records || {});
+  records = state.records || {};
+  series = byDay(records);
   render(state);
 }
 
@@ -41,6 +47,7 @@ function render(state) {
     : 'Sincronizá';
 
   renderChart(Number($('#range').value));
+  renderModels();
   renderMonths(today.slice(0, 7));
   renderDays();
 
@@ -102,6 +109,45 @@ function renderChart(days) {
     <line class="grid" x1="0" x2="${W}" y1="${base}" y2="${base}"></line>${bars}${ticks}${maxLabel}</svg>`;
 }
 
+/** Rango de días (YYYY-MM-DD) que eligió el usuario para la tabla por modelo. */
+function modelRange(value) {
+  const now = new Date();
+  const today = dayKey(now.getTime());
+  if (value === 'all') return {};
+  if (value === 'month') return { from: `${today.slice(0, 8)}01`, to: today };
+  if (value === 'prev') {
+    const ym = dayKey(new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime()).slice(0, 7);
+    return { from: `${ym}-01`, to: `${ym}-31` };
+  }
+  const d = new Date(now);
+  d.setDate(d.getDate() - (Number(value) - 1));
+  return { from: dayKey(d.getTime()), to: today };
+}
+
+function renderModels() {
+  const tbody = $('#models').querySelector('tbody');
+  const more = $('#models-more');
+  const all = byModel(records, modelRange($('#model-range').value));
+  if (!all.length) {
+    tbody.innerHTML = '<tr><td class="empty" colspan="4">Sin ganancias de modelos en este período</td></tr>';
+    more.hidden = true;
+    return;
+  }
+  const rows = showAllModels ? all : all.slice(0, MODELS_SHOWN);
+  tbody.innerHTML = rows.map((m) => {
+    const tip = `${m.title}: ${fmt(m.design)} por diseño y perfiles · ${fmt(m.boost)} de ${m.boosts} boost${m.boosts === 1 ? '' : 's'}${m.regular ? ` · ${fmt(m.regular)} regulares` : ''}`;
+    return `<tr title="${esc(tip)}">
+      <td class="model">${esc(m.title)}</td>
+      <td class="num design">${dash(m.design)}</td>
+      <td class="num boost">${dash(m.boost)}</td>
+      <td class="tot">${fmt(m.total)}<span class="usd">${usd(m.total)}</span></td>
+    </tr>`;
+  }).join('');
+  const hidden = all.length - MODELS_SHOWN;
+  more.hidden = hidden <= 0;
+  more.textContent = showAllModels ? 'Ver menos' : `Ver ${hidden} modelo${hidden === 1 ? '' : 's'} más`;
+}
+
 function renderMonths(currentMonth) {
   const tbody = $('#months').querySelector('tbody');
   const rows = byMonth(series).slice(0, 12);
@@ -139,6 +185,8 @@ function renderDays() {
 }
 
 $('#range').addEventListener('change', () => renderChart(Number($('#range').value)));
+$('#model-range').addEventListener('change', () => { showAllModels = false; renderModels(); });
+$('#models-more').addEventListener('click', () => { showAllModels = !showAllModels; renderModels(); });
 
 $('#sync').addEventListener('click', async (ev) => {
   const btn = ev.currentTarget;

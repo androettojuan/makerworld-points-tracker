@@ -2,6 +2,8 @@ import { extractRecords, POINT_URL_RE } from './lib/parse.js';
 import { isMakerWorldUrl } from './lib/makerworld.js';
 import { extractSnapshot, diffSnapshots } from './lib/snapshot.js';
 import { billUrl, isBillUrl, looksLikeBills, parseBills, BILL_LIMIT } from './lib/bills.js';
+import { byModel } from './lib/aggregate.js';
+import { dayKey } from './lib/parse.js';
 import { saveRecords, removeRecords, saveEndpoint, getEndpoints, getRecords, setMeta, getMeta, clearAll } from './lib/store.js';
 
 const MAX_BILL_PAGES = 500;    // 50.000 movimientos
@@ -51,12 +53,33 @@ async function handle(msg, sender) {
       return { records: await getRecords(), endpoints: await getEndpoints(), meta: await getMeta() };
     case 'sync':
       return syncAll();
+    case 'get-models':
+      return modelPoints();
     case 'reset':
       await serialized(clearAll);
       return { ok: true };
     default:
       return { ok: false, unknown: msg.type };
   }
+}
+
+/**
+ * Puntos por modelo para las tarjetas de makerworld.com: total histórico y
+ * últimos 30 días, indexados por cada clave de la publicación (id:, m: y
+ * t:título; ver `billDesign`), así src/cards.js la encuentra por cualquiera.
+ */
+async function modelPoints() {
+  const records = await getRecords();
+  const from = new Date();
+  from.setDate(from.getDate() - 29);
+  const recent = new Map(byModel(records, { from: dayKey(from.getTime()) }).map((m) => [m.key, m]));
+  const models = {};
+  for (const m of byModel(records)) {
+    const r = recent.get(m.key);
+    const entry = { title: m.title, total: m.total, design: m.design, boost: m.boost, boosts: m.boosts, last30: r ? r.total : 0 };
+    for (const k of m.keys) models[k] = entry;
+  }
+  return { models };
 }
 
 /** Llega una respuesta capturada del sniffer: la guardamos y aprendemos el endpoint. */
