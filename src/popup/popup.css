@@ -77,6 +77,12 @@ td.tot { text-align: right; font-weight: 600; }
 .spent { display: block; font-size: 10px; font-weight: 400; color: var(--spent); }
 .note { margin: 6px 0 0; font-size: 10px; color: var(--muted); }
 
+#models { table-layout: fixed; }
+#models th:first-child { width: 46%; }
+td.model { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 8px; }
+.more { display: block; width: 100%; margin-top: 6px; font-size: 11px; color: var(--muted); }
+.more[hidden] { display: none; }
+
 footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 14px; font-size: 11px; color: var(--muted); }
 footer a { color: var(--design); white-space: nowrap; }
 .empty { color: var(--muted); padding: 14px 0; text-align: center; }

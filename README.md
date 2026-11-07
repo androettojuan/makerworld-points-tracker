@@ -19,8 +19,28 @@ oscuro del sistema.</sub>
   dólares (US$ 0,066 por punto) y los regulares en segundo plano.
 - **Gráfico diario** de exclusivos ganados (14, 30 o 90 días), apilado por diseños,
   boosts y otros.
+- **Por modelo**: cuántos exclusivos (y dólares) dio cada modelo en el período
+  elegido (este mes, mes pasado, 30 o 90 días, o todo), separando recompensas de
+  diseño y perfiles de impresión de boosts. Muestra los 10 que más dieron y el resto
+  a pedido.
 - **Tabla por mes** y **últimos días**. Los canjes se muestran aparte y no restan de
   lo ganado.
+
+<p align="center">
+  <img src="docs/capturas/por-modelo.png" width="400" alt="Tabla por modelo: cada modelo con sus puntos de diseño, de boosts y el total exclusivo en dólares">
+</p>
+
+Los modelos se agrupan por id si el historial lo trae y, si no, por título: un
+modelo al que le cambiaste el nombre puede aparecer dos veces.
+
+### En las tarjetas de MakerWorld
+
+En makerworld.com, cada tarjeta de un modelo tuyo que haya dado puntos muestra, al
+lado de likes, descargas e impresiones, los exclusivos que lleva generando (en
+verde). En la página del modelo aparece en la fila de boosts, descargas e
+impresiones, antes de la fecha de publicación. Pasando el mouse se ven los dólares, el desglose diseño / boosts y los
+últimos 30 días. Lo hace [`src/cards.js`](src/cards.js), que busca la tarjeta por el
+link `/models/<id>` y su título original, y se actualiza solo al sincronizar.
 
 ## Cómo obtiene los datos
 

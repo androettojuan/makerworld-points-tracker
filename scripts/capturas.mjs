@@ -105,6 +105,11 @@ for (const scheme of ['light', 'dark']) {
   await page.close();
 }
 
+// La tabla por modelo queda debajo del corte: la capturamos sola.
+const models = await open(browser, 'src/popup/popup.html', { width: 400, height: 600, colorScheme: 'light' });
+await models.locator('#models').locator('xpath=..').screenshot({ path: join(OUT, 'por-modelo.png') });
+await models.close();
+
 // Hasta antes de los registros crudos, que son un volcado de JSON.
 const opts = await open(browser, 'src/options/options.html', { width: 960, height: 720, colorScheme: 'light' });
 await opts.screenshot({ path: join(OUT, 'diagnostico.png') });

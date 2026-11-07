@@ -26,6 +26,13 @@
       "run_at": "document_start",
       "world": "ISOLATED",
       "all_frames": false
+    },
+    {
+      "matches": ["https://makerworld.com/*", "https://*.makerworld.com/*"],
+      "js": ["src/cards.js"],
+      "run_at": "document_idle",
+      "world": "ISOLATED",
+      "all_frames": false
     }
   ],
   "action": {
