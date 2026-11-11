@@ -114,6 +114,7 @@ function modelRange(value) {
   const now = new Date();
   const today = dayKey(now.getTime());
   if (value === 'all') return {};
+  if (value === 'today') return { from: today, to: today };
   if (value === 'month') return { from: `${today.slice(0, 8)}01`, to: today };
   if (value === 'prev') {
     const ym = dayKey(new Date(now.getFullYear(), now.getMonth() - 1, 1).getTime()).slice(0, 7);
