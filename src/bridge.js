@@ -12,6 +12,8 @@ window.addEventListener('message', (ev) => {
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+  // El background pregunta si esta pestaña ya tiene nuestros scripts.
+  if (msg?.type === 'ping') { sendResponse({ ok: true }); return; }
   if (msg?.type !== 'replay') return;
   window.postMessage({ __mwpt: true, type: 'replay', payload: msg.payload }, window.location.origin);
   sendResponse({ ok: true });

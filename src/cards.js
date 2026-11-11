@@ -8,12 +8,19 @@
  * lo manda o, si no, por título; probamos las dos claves (ver `billDesign`).
  */
 (() => {
-  const USD_PER_POINT = 0.066;
+  let usdPerPoint = 0.066; // lo reemplaza el valor de Ajustes al cargar
   const ATTR = 'data-mwpt';
   const MODEL_RE = /\/models\/(\d+)/;
 
-  const fmt = (n) => (Math.round(n * 10) / 10).toLocaleString('es-AR');
-  const usd = (p) => `US$ ${(p * USD_PER_POINT).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const t = (key, ...subs) => chrome.i18n.getMessage(key, subs.map(String)) || key;
+  const ui = chrome.i18n.getUILanguage?.() || 'en';
+  const nav = navigator.language || '';
+  // Igual que LOCALE en src/lib/i18n.js.
+  const LOCALE = ui.startsWith('es')
+    ? 'es-AR'
+    : (nav.slice(0, 2) === ui.slice(0, 2) && nav.includes('-') ? nav : ui);
+  const fmt = (n) => (Math.round(n * 10) / 10).toLocaleString(LOCALE);
+  const usd = (p) => `US$ ${(p * usdPerPoint).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   /** Misma normalización que `billDesign` en src/lib/bills.js. */
   const titleKey = (t) => `t:${String(t || '').trim().toLowerCase().replace(/\s+/g, ' ')}`;
 
@@ -64,10 +71,10 @@
     el.setAttribute(ATTR, 'badge');
     el.style.cssText = 'display:inline-flex;align-items:center;gap:4px;color:#1f9d55;font-weight:600;white-space:nowrap;cursor:default';
     el.title = [
-      `${fmt(m.total)} puntos exclusivos (${usd(m.total)})`,
-      `Diseño y perfiles: ${fmt(m.design)}`,
-      `Boosts: ${fmt(m.boost)} (${m.boosts})`,
-      `Últimos 30 días: ${fmt(m.last30)} (${usd(m.last30)})`,
+      t('badgeTotal', fmt(m.total), usd(m.total)),
+      t('badgeDesign', fmt(m.design)),
+      t('badgeBoosts', fmt(m.boost), m.boosts),
+      t('badgeLast30', fmt(m.last30), usd(m.last30)),
     ].join('\n');
     el.innerHTML = `${ICON}<span>${fmt(m.total)}</span>`;
     return el;
@@ -127,6 +134,7 @@
     try {
       const res = await chrome.runtime.sendMessage({ type: 'get-models' });
       models = res?.models || {};
+      if (res?.usdRate) usdPerPoint = res.usdRate;
     } catch {
       models = {};
     }
@@ -141,7 +149,8 @@
     load();
   };
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.records) load();
+    const rateChanged = changes.meta && changes.meta.oldValue?.usdRate !== changes.meta.newValue?.usdRate;
+    if (area === 'local' && (changes.records || rateChanged)) load();
   });
   if (document.body) start();
   else document.addEventListener('DOMContentLoaded', start, { once: true });

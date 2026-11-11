@@ -25,7 +25,12 @@ const LABELS = {
   operation_cancel_exchange_cash: 'Reintegro de canje',
   academy_course_award: 'Curso de Academy',
   makerlab_first_export: 'Exportación MakerLab',
+  makerLab_first_export: 'Exportación MakerLab',
   complete_personal_info: 'Perfil completo',
+  fill_personal_info_2: 'Perfil completo',
+  create_design: 'Primer diseño',
+  design_exclusive_violation_revoke: 'Penalización por exclusividad (diseño)',
+  instance_exclusive_violation_revoke: 'Penalización por exclusividad (perfil)',
 };
 
 export function billKind(type) {

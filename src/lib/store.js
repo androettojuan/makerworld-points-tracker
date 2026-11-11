@@ -73,4 +73,32 @@ export async function setMeta(patch) {
 
 export async function clearAll() {
   await chrome.storage.local.clear();
+  await setMeta({ schema: SCHEMA });
+}
+
+/**
+ * Versión del formato guardado. Si una versión futura cambia la forma de los
+ * registros o de `meta`, sube este número y agrega el paso en `migrate`, así
+ * nadie pierde su historial al actualizar.
+ */
+export const SCHEMA = 1;
+
+export async function migrate() {
+  const meta = await getMeta();
+  const from = meta.schema || 0;
+  if (from >= SCHEMA) return from;
+  // 0 → 1: solo marca el formato; los datos de la 0.1 ya tienen la forma actual.
+  await setMeta({ schema: SCHEMA });
+  return SCHEMA;
+}
+
+/** Valida un respaldo exportado y devuelve sus registros, o null si no sirve. */
+export function backupRecords(data) {
+  const recs = data?.records;
+  if (!recs || typeof recs !== 'object' || Array.isArray(recs)) return null;
+  const list = Object.values(recs);
+  const valid = list.filter((r) => r && typeof r.id === 'string' && Number.isFinite(r.ts) && typeof r.amount === 'number');
+  if (list.length && !valid.length) return null;
+  if ((data.meta?.schema || 0) > SCHEMA) return null; // de una versión más nueva
+  return valid;
 }

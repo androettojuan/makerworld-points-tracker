@@ -1,43 +1,67 @@
 <!doctype html>
-<html lang="es">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>MakerWorld Points — Diagnóstico</title>
+  <title data-i18n="diagPageTitle">Points Tracker</title>
   <link rel="stylesheet" href="options.css" />
 </head>
 <body>
-  <h1>Diagnóstico</h1>
-  <p class="hint">
-    Esta página muestra qué aprendió la extensión del tráfico real de MakerWorld.
-    Si la clasificación boost/diseño falla, mirá la columna <em>Etiqueta</em> de los
-    registros crudos: esos son los textos con los que decide.
-  </p>
+  <h1 data-i18n="settingsTitle"></h1>
 
-  <section>
-    <h2>Endpoints detectados</h2>
-    <table id="endpoints"><thead><tr><th>Endpoint</th><th>Registros</th><th>Hits</th><th>Último</th></tr></thead><tbody></tbody></table>
+  <section class="settings">
+    <label class="field">
+      <span data-i18n="usdRateLabel"></span>
+      <input id="usd-rate" type="number" min="0.001" max="9" step="0.001" inputmode="decimal" />
+      <small class="hint" data-i18n="usdRateHint"></small>
+    </label>
+    <label class="check">
+      <input id="auto-open" type="checkbox" />
+      <span>
+        <span data-i18n="autoOpenLabel"></span>
+        <small class="hint" data-i18n="autoOpenHint"></small>
+      </span>
+    </label>
+    <span id="saved" class="saved" role="status"></span>
   </section>
 
   <section>
-    <h2>Verificación de saldo</h2>
-    <p class="hint">Suma de todo el historial comparada con el saldo que informa MakerWorld. Si coinciden, exclusivos y regulares se están separando bien.</p>
-    <table id="check"><thead><tr><th></th><th>Exclusivos</th><th>Regulares</th></tr></thead><tbody></tbody></table>
+    <h2 data-i18n="backupTitle"></h2>
+    <p class="hint" data-i18n="backupHint"></p>
+    <div class="actions">
+      <button id="export" type="button" data-i18n="exportJson"></button>
+      <button id="import" type="button" data-i18n="importJson"></button>
+      <input id="import-file" type="file" accept="application/json,.json" hidden />
+    </div>
+    <p id="import-status" class="hint" role="status"></p>
+  </section>
+
+  <h1 class="diag-title" data-i18n="diagTitle"></h1>
+  <p class="hint" data-i18n-html="diagHint"></p>
+
+  <section>
+    <h2 data-i18n="endpointsTitle"></h2>
+    <table id="endpoints"><thead><tr><th data-i18n="colEndpoint"></th><th data-i18n="colRecords"></th><th data-i18n="colHits"></th><th data-i18n="colLast"></th></tr></thead><tbody></tbody></table>
   </section>
 
   <section>
-    <h2>Clasificación por tipo</h2>
-    <table id="kinds"><thead><tr><th>Tipo</th><th>Clasificada como</th><th>Registros</th><th>Exclusivos</th><th>Regulares</th></tr></thead><tbody></tbody></table>
+    <h2 data-i18n="checkTitle"></h2>
+    <p class="hint" data-i18n="checkHint"></p>
+    <table id="check"><thead><tr><th></th><th data-i18n="colExclusive"></th><th data-i18n="colRegular"></th></tr></thead><tbody></tbody></table>
   </section>
 
   <section>
-    <h2>Registros crudos <small id="count"></small></h2>
+    <h2 data-i18n="kindsTitle"></h2>
+    <table id="kinds"><thead><tr><th data-i18n="colType"></th><th data-i18n="colClassifiedAs"></th><th data-i18n="colRecords"></th><th data-i18n="colExclusive"></th><th data-i18n="colRegular"></th></tr></thead><tbody></tbody></table>
+  </section>
+
+  <section>
+    <h2><span data-i18n="rawTitle"></span> <small id="count"></small></h2>
     <pre id="raw"></pre>
   </section>
 
   <section class="actions">
-    <button id="export" type="button">Exportar JSON</button>
-    <button id="csv" type="button">Exportar CSV</button>
-    <button id="reset" type="button" class="danger">Borrar todos los datos</button>
+    <button id="csv" type="button" data-i18n="exportCsv"></button>
+    <button id="reset" type="button" class="danger" data-i18n="resetAll"></button>
   </section>
 
   <script type="module" src="options.js"></script>
