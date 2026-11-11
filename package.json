@@ -1,14 +1,18 @@
 {
   "name": "makerworld-points-tracker",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Extensión de Chrome para llevar el control diario de puntos en MakerWorld",
   "scripts": {
-    "test": "node test/parse.test.mjs",
-    "capturas": "node scripts/capturas.mjs"
+    "test": "node test/parse.test.mjs && node test/i18n.test.mjs",
+    "capturas": "node scripts/capturas.mjs",
+    "empaquetar": "node scripts/empaquetar.mjs"
   },
   "devDependencies": {
     "playwright": "^1.64.1"
+  },
+  "engines": {
+    "node": ">=22.2"
   }
 }

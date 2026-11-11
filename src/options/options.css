@@ -19,4 +19,12 @@ button:hover { border-color: var(--accent); color: var(--accent); }
 button.danger:hover { border-color: var(--danger); color: var(--danger); }
 small { color: var(--muted); font-weight: 400; }
 
+.settings { display: grid; gap: 16px; }
+.field { display: grid; gap: 4px; max-width: 420px; }
+.field input { font: inherit; padding: 6px 8px; width: 140px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); }
+.check { display: flex; gap: 10px; align-items: flex-start; }
+.check input { margin-top: 4px; }
+.check small { display: block; }
+.saved { color: var(--accent); font-size: 13px; min-height: 1em; }
+.diag-title { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--line); }
 td details pre { max-height: 24rem; overflow: auto; white-space: pre; max-width: 60vw; margin-top: 6px; }

@@ -120,5 +120,16 @@ eq('perfiles claves', byModel(perfiles)[0].keys.sort(), ['id:77', 't:gta vi']);
 eq('perfil sin designTitle', billDesign({ type: 'instance_reward_v2', instanceRewardV2: { instanceTitle: '0,2 mm' } }), null);
 eq('por modelo rango', byModel(mrec, { from: '2026-09-01', to: '2026-09-30' }).map(m => [m.title, m.total]), [['Llavero', 16.5], ['Capibaras', 2.5]]);
 
+// Penalizaciones aparte de los canjes: las aplica MakerWorld, no el usuario.
+const neg = Object.fromEntries(parseBills({ hits: [
+  { id: 1, type: 'design_reward_v2', createTime: '2026-09-24T10:00:00Z', pointChangeExclusive: 50, pointChangeRegular: 0 },
+  { id: 2, type: 'design_exclusive_violation_revoke', createTime: '2026-09-24T11:00:00Z', pointChangeExclusive: -223.5, pointChangeRegular: 0 },
+  { id: 3, type: 'instance_exclusive_violation_revoke', createTime: '2026-09-24T11:05:00Z', pointChangeExclusive: -3.75, pointChangeRegular: 0 },
+  { id: 4, type: 'exchange_cash', createTime: '2026-09-24T15:00:00Z', pointChangeExclusive: -1500, pointChangeRegular: 0 },
+] }).map((r) => [r.id, r]));
+const negDay = byDay(neg)[0];
+eq('penalización aparte', [negDay.total, negDay.spent, negDay.penalty], [50, 1500, 227.25]);
+eq('penalización etiqueta', neg['bill:2'].label, 'Penalización por exclusividad (diseño)');
+
 console.log(fail ? `\n${fail} fallos` : '\nTodo verde');
 process.exit(fail ? 1 : 0);

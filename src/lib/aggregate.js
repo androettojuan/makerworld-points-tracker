@@ -2,7 +2,13 @@ import { dayKey } from './parse.js';
 import { billDesign } from './bills.js';
 
 const round = (n) => Math.round(n * 100) / 100;
-const FIELDS = ['total', 'boost', 'design', 'other', 'spent', 'regular', 'regularSpent'];
+const FIELDS = ['total', 'boost', 'design', 'other', 'spent', 'penalty', 'regular', 'regularSpent'];
+
+/**
+ * Puntos que MakerWorld quita por su cuenta (p. ej. `design_exclusive_violation_revoke`
+ * cuando un modelo rompe la exclusividad), a diferencia de un canje que pide el usuario.
+ */
+export const isPenalty = (rec) => /violation|revoke|penalt|punish|deduct/i.test(rec.raw?.type || '');
 const emptyBucket = (extra) => ({ ...extra, ...Object.fromEntries(FIELDS.map((f) => [f, 0])), count: 0 });
 
 /**
@@ -18,10 +24,25 @@ function pointsOf(rec) {
 }
 
 /**
+ * Suma de todo el historial, con signo (canjes restan). Si el historial está
+ * completo, coincide con el saldo que informa MakerWorld.
+ */
+export function historyTotals(records) {
+  let exclusive = 0, regular = 0;
+  for (const rec of Object.values(records)) {
+    const p = pointsOf(rec);
+    exclusive += p.exclusive;
+    regular += p.regular;
+  }
+  return { exclusive: round(exclusive), regular: round(regular) };
+}
+
+/**
  * Agrupa registros por día.
  * `total` y el desglose boost / diseño / otros son puntos **exclusivos** ganados;
- * los regulares van en `regular`. Lo negativo (canjes) va aparte en `spent` y
- * `regularSpent` para que no achique las ganancias del período.
+ * los regulares van en `regular`. Lo negativo va aparte para que no achique las
+ * ganancias del período: canjes en `spent` y `regularSpent`, penalizaciones de
+ * exclusivos en `penalty`.
  */
 export function byDay(records) {
   const days = new Map();
@@ -31,7 +52,7 @@ export function byDay(records) {
     const bucket = days.get(d);
     const { exclusive, regular } = pointsOf(rec);
 
-    if (exclusive < 0) bucket.spent += -exclusive;
+    if (exclusive < 0) bucket[isPenalty(rec) ? 'penalty' : 'spent'] += -exclusive;
     else if (exclusive > 0) {
       bucket.total += exclusive;
       bucket[rec.kind] = (bucket[rec.kind] || 0) + exclusive;
